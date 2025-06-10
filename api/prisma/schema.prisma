@@ -1,0 +1,54 @@
+// backend/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../node_modules/.prisma/client" // Opcional: se quiser customizar o local do client gerado
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  price       Float
+  category    String
+  imageUrl    String?  // Opcional: para imagem do produto
+
+  orderItems OrderItem[] // Relação: Produto pode estar em vários OrderItems
+}
+
+model Order {
+  id              String    @id @default(cuid())
+  customerName    String
+  customerEmail   String
+  customerPhone   String
+  customerAddress String?
+  customerCity    String?
+  
+  totalAmount     Float
+  paymentMethod   String
+  orderNotes      String?
+  status          String    @default("Recebido")
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  items           OrderItem[] // Relação: Pedido tem vários OrderItems
+}
+
+model OrderItem {
+  id             Int     @id @default(autoincrement())
+  productName    String  // Nome do produto no momento da compra
+  quantity       Int
+  priceAtOrder   Float   // Preço unitário do produto no momento da compra
+
+  orderId        String
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade) // Se deletar o pedido, deleta os itens
+
+  productId      Int
+  product        Product @relation(fields: [productId], references: [id], onDelete: Restrict) // Não deixa deletar produto se estiver em um pedido
+}
